@@ -26,13 +26,14 @@ def create_tables(conn):
             titulo VARCHAR(1000),
             salesrank BIGINT,
             asin VARCHAR(10) NOT NULL,
-            PRIMARY KEY(asin)
+            PRIMARY KEY(asin),
+            UNIQUE id
         )""")
 
         cursor.execute("""CREATE TABLE IF NOT EXISTS Review(
             asin VARCHAR(10) NOT NULL,
             data DATE,
-            customer VARCHAR(20),
+            customer VARCHAR(100),
             rating INT,
             novotes INT,
             nohelpful INT,
@@ -41,19 +42,25 @@ def create_tables(conn):
 
         cursor.execute("""CREATE TABLE IF NOT EXISTS Categorias(
             catid VARCHAR(20),
-            categoria VARCHAR(100)
+            categoria VARCHAR(100),
+            PRIMARY KEY (catid),
+            UNIQUE (categoria)           
         )""")
 
         cursor.execute("""CREATE TABLE IF NOT EXISTS Prodcat(
             asin VARCHAR(10),
             catid VARCHAR(20),
-            FOREIGN KEY(asin) REFERENCES Produtos(asin)
+            PRIMARY KEY (asin, catid),
+            FOREIGN KEY (asin) REFERENCES Produtos (asin),
+            FOREIGN KEY (catid) REFERENCES Categorias (catid)
         )""")
 
         cursor.execute("""CREATE TABLE IF NOT EXISTS SimilarP(
             asin VARCHAR(10),
             similarasin VARCHAR(10),
-            FOREIGN KEY(asin) REFERENCES Produtos(asin)
+            PRIMARY KEY (asin, similarasin),
+            FOREIGN KEY (asin) REFERENCES Produtos (asin),
+            FOREIGN KEY (similarasin) REFERENCES Produtos (asin)
         )""")
 
         conn.commit()
@@ -70,6 +77,3 @@ if __name__ == '__main__':
         create_tables(conn)
         conn.close()
         print("PostgreSQL connection is closed")
-        
-
-     
