@@ -6,7 +6,7 @@ DB_PASS = "icomp123"
 import re
 from datetime import datetime
 import psycopg2
-
+import numpy as np
 def connect_db():
     try:
         conn = psycopg2.connect(host=DB_HOST, dbname=DB_NAME, user=DB_USER, password=DB_PASS)
