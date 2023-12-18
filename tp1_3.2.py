@@ -3,8 +3,10 @@ DB_NAME = "Amazon-metadata"
 DB_USER = "admin"
 DB_PASS = "icomp123"
 
+import re
+from datetime import datetime
 import psycopg2
-
+import numpy as np
 def connect_db():
     try:
         conn = psycopg2.connect(host=DB_HOST, dbname=DB_NAME, user=DB_USER, password=DB_PASS)
@@ -42,7 +44,7 @@ def create_tables(conn):
 
         cursor.execute("""CREATE TABLE IF NOT EXISTS Categorias(
             catid VARCHAR(20),
-            categoria VARCHAR(100),
+            categoria VARCHAR(200),
             PRIMARY KEY (catid),
             UNIQUE (categoria)           
         )""")
@@ -77,3 +79,5 @@ if __name__ == '__main__':
         create_tables(conn)
         conn.close()
         print("PostgreSQL connection is closed")
+
+##falta extração de dados e povoamento das relações com estes dados. 
