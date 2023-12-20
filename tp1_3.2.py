@@ -130,6 +130,68 @@ def populate_tables(conn, data_file_path):
 
     except (Exception, psycopg2.DatabaseError) as error:
         print("Erro inserindo dados:", error)
+
+
+##Função para extrair dados  da tabela Produtos 
+def extrair_produtos(conn):
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM Produtos")
+        produtos = cursor.fetchall()
+        return produtos
+    except (Exception, psycopg2.DatabaseError) as error:
+        print("Erros para a tabela Produtos", error)
+        return []
+
+
+##Funcao para extrair dados da tabela Review
+
+def extrair_review(conn):
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM Review")
+        categorias = cursor.fetchall()
+        return categorias
+    except (Exception, psycopg2.DatabaseError) as error:
+        print("Error para a tabela Review", error) 
+        return [] 
+
+
+# Função para extrair dados da tabela 'Categorias'
+def extrair_categorias(conn):
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM Categorias")
+        categorias = cursor.fetchall()
+        return categorias
+    except (Exception, psycopg2.DatabaseError) as error:
+        print("Error para a tabela Categorias", error)
+        return []        
+
+##Funcao para extrair dados da tabela Prodcat
+
+def extrair_prodcat(conn):
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM Prodcat")
+        prodcat = cursor.fetchall()
+        return prodcat 
+    except (Exception, psycopg2.DatabaseError) as error:
+        print("Error para a tabela Prodcat", error) 
+        return []
+
+##Funcao para extrair dados da tabela Prodcat
+
+def extrair_similarp(conn):
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM SimilarP")
+        similiarp = cursor.fetchall()
+        return similiarp 
+    except (Exception, psycopg2.DatabaseError) as error:
+        print("Error para a tabela SimilarP", error) 
+        return []            
+        
     
 if __name__ == '__main__':
     conn = connect_db()
@@ -142,4 +204,11 @@ if __name__ == '__main__':
         conn.close()
         print("PostgreSQL connection is closed")
 
-##falta extração de dados e povoamento das relações com estes dados. 
+    if(conn):
+        produtos = extrair_produtos(conn)
+        reviews = extrair_review(conn)
+        categorias = extrair_categorias(conn)
+        prodcat = extrair_prodcat(conn)
+        similiarp = extrair_similarp(conn)
+
+    
