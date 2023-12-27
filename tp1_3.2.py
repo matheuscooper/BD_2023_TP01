@@ -131,88 +131,8 @@ def populate_tables(conn, data_file_path):
     except (Exception, psycopg2.DatabaseError) as error:
         print("Erro inserindo dados:", error)
 
-def read_data_file(file_path):
-    try:
-        with open(file_path, 'r', encoding='utf-8') as file:
-            data = file.readlines()
-        return data
-    except FileNotFoundError:
-        print("Arquivo não encontrado.")
-        return None
-    except Exception as e:
-        print("Ocorreu um erro durante a leitura do arquivo:", e)
-        return None
-
-##Função para extrair dados  da tabela Produtos 
-def extrair_produtos(conn):
-    try:
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM Produtos")
-        produtos = cursor.fetchall()
-        return produtos
-    except (Exception, psycopg2.DatabaseError) as error:
-        print("Erros para a tabela Produtos", error)
-        return []
-
-
-##Funcao para extrair dados da tabela Review
-
-def extrair_review(conn):
-    try:
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM Review")
-        categorias = cursor.fetchall()
-        return categorias
-    except (Exception, psycopg2.DatabaseError) as error:
-        print("Error para a tabela Review", error) 
-        return [] 
-
-
-# Função para extrair dados da tabela 'Categorias'
-def extrair_categorias(conn):
-    try:
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM Categorias")
-        categorias = cursor.fetchall()
-        return categorias
-    except (Exception, psycopg2.DatabaseError) as error:
-        print("Error para a tabela Categorias", error)
-        return []        
-
-##Funcao para extrair dados da tabela Prodcat
-
-def extrair_prodcat(conn):
-    try:
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM Prodcat")
-        prodcat = cursor.fetchall()
-        return prodcat 
-    except (Exception, psycopg2.DatabaseError) as error:
-        print("Error para a tabela Prodcat", error) 
-        return []
-
-##Funcao para extrair dados da tabela Prodcat
-
-def extrair_similarp(conn):
-    try:
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM SimilarP")
-        similiarp = cursor.fetchall()
-        return similiarp 
-    except (Exception, psycopg2.DatabaseError) as error:
-        print("Error para a tabela SimilarP", error) 
-        return []            
-        
     
 if __name__ == '__main__':
-
-    data_file_path = "amazon-meta.txt" 
-
-    data = read_data_file(data_file_path)
-
-    if data is not None:
-        print("Conteúdo do arquivo lido com sucesso:")
-
 
     conn = connect_db()
 
@@ -223,12 +143,5 @@ if __name__ == '__main__':
         populate_tables(conn, data_file_path)
         conn.close()
         print("PostgreSQL connection is closed")
-
-    if(conn):
-        produtos = extrair_produtos(conn)
-        reviews = extrair_review(conn)
-        categorias = extrair_categorias(conn)
-        prodcat = extrair_prodcat(conn)
-        similiarp = extrair_similarp(conn)
-
+    
     
