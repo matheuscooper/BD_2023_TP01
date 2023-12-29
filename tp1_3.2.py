@@ -24,7 +24,7 @@ def create_tables(conn):
 
         cursor.execute("""CREATE TABLE IF NOT EXISTS Produtos(
             id INT UNIQUE,
-            grupo VARCHAR(30),
+            grupo VARCHAR(100),
             titulo VARCHAR(1000),
             salesrank BIGINT,
             asin VARCHAR(10) NOT NULL,
@@ -37,31 +37,21 @@ def create_tables(conn):
             customer VARCHAR(100),
             rating INT,
             novotes INT,
-            nohelpful INT,
-            FOREIGN KEY(asin) REFERENCES Produtos(asin)
+            nohelpful INT
         )""")
 
         cursor.execute("""CREATE TABLE IF NOT EXISTS Categorias(
-            catid VARCHAR(20),
-            categoria VARCHAR(200),
-            PRIMARY KEY (catid),
-            UNIQUE (categoria)           
-        )""")
-
-        cursor.execute("""CREATE TABLE IF NOT EXISTS Prodcat(
             asin VARCHAR(10),
-            catid VARCHAR(20),
-            PRIMARY KEY (asin, catid),
-            FOREIGN KEY (asin) REFERENCES Produtos (asin),
-            FOREIGN KEY (catid) REFERENCES Categorias (catid)
+            categoria VARCHAR(1000),
+            PRIMARY KEY (asin, categoria),
+            FOREIGN KEY (asin) REFERENCES Produtos (asin)          
         )""")
 
         cursor.execute("""CREATE TABLE IF NOT EXISTS SimilarP(
             asin VARCHAR(10),
             similarasin VARCHAR(10),
             PRIMARY KEY (asin, similarasin),
-            FOREIGN KEY (asin) REFERENCES Produtos (asin),
-            FOREIGN KEY (similarasin) REFERENCES Produtos (asin)
+            FOREIGN KEY (asin) REFERENCES Produtos (asin)
         )""")
 
         conn.commit()
@@ -73,75 +63,134 @@ def create_tables(conn):
 def populate_tables(conn, data_file_path):
     try:
         cursor = conn.cursor()
-
         with open(data_file_path, 'r', encoding='utf-8') as file:
-            current_product = None
-
+            current_block = ""
+            started = False  # Indica se já começou a leitura dos blocos
             for line in file:
                 line = line.strip()
-
+                # Verifica se a linha começa com "Id:"
                 if line.startswith("Id:"):
-                    if current_product:
-                        # Inserir dados na tabela 'Produtos'
-                        cursor.execute("""
-                            INSERT INTO Produtos (id, grupo, titulo, salesrank, asin)
-                            VALUES (%s, %s, %s, %s, %s)
-                        """, (current_product['Id'], current_product.get('group', ''), current_product.get('title', ''), current_product.get('salesrank', 0), current_product.get('ASIN', '')))
-
-                    current_product = {'Id': int(re.search(r'\d+', line).group())}
-
-                elif line.startswith("ASIN:"):
-                    current_product['ASIN'] = line.split(":")[1].strip()
-
-                elif line.startswith("  title:"):
-                    current_product['title'] = line.split(":")[1].strip()
-
-                elif line.startswith("  group:"):
-                    current_product['group'] = line.split(":")[1].strip()
-
-                elif line.startswith("  salesrank:"):
-                    current_product['salesrank'] = int(re.search(r'\d+', line).group())
-
-                elif line.startswith("    "):
-                    # Linhas com dados de revisão
-                    review_data = line.split()
-                    date_str = review_data[0]
-                    date = datetime.strptime(date_str, '%Y-%m-%d').date()
-                    customer = review_data[2]
-                    rating = int(review_data[4])
-                    votes = int(review_data[6])
-                    helpful = int(review_data[8])
-
-                    # Inserir dados na tabela 'Review'
-                    cursor.execute("""
-                        INSERT INTO Review (asin, data, customer, rating, novotes, nohelpful)
-                        VALUES (%s, %s, %s, %s, %s, %s)
-                    """, (current_product['ASIN'], date, customer, rating, votes, helpful))
-
-            # Inserir o último produto
-            if current_product:
-                cursor.execute("""
-                    INSERT INTO Produtos (id, grupo, titulo, salesrank, asin)
-                    VALUES (%s, %s, %s, %s, %s)
-                """, (current_product['Id'], current_product.get('group', ''), current_product.get('title', ''), current_product.get('salesrank', 0), current_product.get('ASIN', '')))
-
+                    # Se já começou, extrai o ASIN e a lista de ASINs similares
+                    if started:
+                        get_produto(cursor, current_block)
+                        get_reviews(cursor, current_block)
+                        get_categoria(cursor, current_block)
+                        get_similar(cursor, current_block)
+                    # Começa um novo bloco
+                    current_block = line
+                    started = True
+                else:
+                    # Adiciona a linha ao bloco atual
+                    current_block += "\n" + line
+            if started:
+                get_produto(cursor, current_block)
+                get_reviews(cursor, current_block)
+                get_categoria(cursor, current_block)
+                get_similar(cursor, current_block)
         conn.commit()
         print("Dados inseridos com sucesso.")
 
     except (Exception, psycopg2.DatabaseError) as error:
         print("Erro inserindo dados:", error)
 
-    
-if __name__ == '__main__':
+def is_discontinued(block):
+    return "discontinued product" in block.lower()
 
+def get_produto(cursor, block):
+    match_asin = re.search(r'ASIN: (\w+)', block)
+    asin = match_asin.group(1) if match_asin else None
+
+    match_id = re.search(r'Id:\s*(\d+)', block)
+    id_value = int(match_id.group(1)) if match_id else 0
+
+    match_grupo = re.search(r'group: (.+)', block)
+    grupo = match_grupo.group(1) if match_grupo else None
+
+    match_titulo = re.search(r'title: (.+)', block)
+    titulo = match_titulo.group(1) if match_titulo else None
+
+    match_salesrank = re.search(r'salesrank: (\d+)', block)
+    salesrank = int(match_salesrank.group(1)) if match_salesrank else None
+
+    if not is_discontinued(block):
+        # Insira os dados na tabela de produtos apenas se não estiver descontinuado
+
+        cursor.execute("""
+            INSERT INTO Produtos (id, grupo, titulo, salesrank, asin)
+            VALUES (%s, %s, %s, %s, %s)
+        """, (id_value, grupo, titulo, salesrank, asin))
+
+def get_reviews(cursor, block):
+    match_asin = re.search(r'ASIN: (\w+)', block)
+    asin = match_asin.group(1) if match_asin else None
+
+    lines = block.splitlines()
+
+    collecting_reviews = False
+    for line in lines:
+        if line.startswith("reviews: total"):
+            collecting_reviews = True
+            continue  # Pula esta linha, pois já sabemos o total de avaliações
+        if collecting_reviews:
+            line = line.split()
+            date = line[0]
+            customer = line[2]
+            rating = line[4]
+            votes = line[6]
+            helpful = line[8]
+
+            cursor.execute("""
+                INSERT INTO Review (asin, data, customer, rating, novotes, nohelpful)
+                VALUES (%s, %s, %s, %s, %s, %s)
+            """, (asin, date, customer, rating, votes, helpful))
+
+def get_categoria(cursor, block):
+    match_asin = re.search(r'ASIN: (\w+)', block)
+    asin = match_asin.group(1) if match_asin else None
+    lines = block.splitlines()
+
+    collecting_categoria = False
+    collecting_review = False
+
+    for line in lines:
+        if line.startswith("categories:"):
+            collecting_categoria = True
+            continue  # Pula esta linha, pois já sabemos o total de avaliações
+        if line.startswith("reviews: total"):
+            collecting_review = True
+            break
+            continue  # Pula esta linha, pois já sabemos o total de avaliações
+        if collecting_categoria and not collecting_review:
+            cursor.execute("""
+                INSERT INTO Categorias (asin, categoria)
+                VALUES (%s, %s)
+            """, (asin, line))
+
+def get_similar(cursor, block):
+    match_0 = re.search(r'ASIN: (\w+)', block)
+    asin = match_0.group(1) if match_0 else None
+
+    match_1 = re.search(r'similar: \d+ (.+)', block)
+    similar_asins = match_1.group(1).split() if match_1 else []
+
+    if similar_asins:
+        # A lista não está vazia, então você pode inserir no banco de dados
+        for similar in similar_asins:
+
+            cursor.execute("""
+                INSERT INTO SimilarP(asin, similarasin)
+                VALUES (%s, %s)
+            """, (asin, similar))
+
+
+if __name__ == '__main__':
     conn = connect_db()
 
-
-    if(conn):
+    if conn:
+        # Criar tabelas e popular
         create_tables(conn)
-        data_file_path = "amazon-meta.txt"
+        data_file_path = "../amazon-meta.txt"
         populate_tables(conn, data_file_path)
+        
         conn.close()
         print("PostgreSQL connection is closed")
-    
-    
