@@ -51,7 +51,24 @@ ORDER BY data;
 
 #d)Listar os 10 produtos líderes de venda em cada grupo de produtos
 cursor.execute("""
-
+WITH ProdutosOrdenados AS (
+    SELECT
+        id,
+        grupo,
+        titulo,
+        salesrank,
+        asin,
+        ROW_NUMBER() OVER (PARTITION BY grupo ORDER BY salesrank) AS ranking_vendas
+    FROM
+        Produtos
+)
+SELECT
+    grupo,
+    titulo
+FROM
+    ProdutosOrdenados
+WHERE
+    ranking_vendas <= 10;
 """)
 
 #e)Listar os 10 produtos com a maior média de avaliações úteis positivas por produto
