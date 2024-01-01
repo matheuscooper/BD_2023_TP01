@@ -29,10 +29,20 @@ LIMIT 5;
 
 #b)Dado um produto, listar os produtos similares com maiores vendas do que ele
 cursor.execute("""
+SELECT titulo
+FROM Produtos, Similarp
+WHERE Produtos.asin=Similarp.similarasin AND Produtos.salesrank < (
+               SELECT salesrank
+               FROM Produtos
+               WHERE 'ASIN_DO_PRODUTO'
+);
 """)
 
 #c)Dado um produto, mostrar a evolução diária das médias de avaliação ao longo do intervalo de tempo coberto no arquivo de entrada
 cursor.execute("""
+SELECT data, AVG(rating)
+FROM Review
+GROUP BY data;
 """)
 
 #d)Listar os 10 produtos líderes de venda em cada grupo de produtos
