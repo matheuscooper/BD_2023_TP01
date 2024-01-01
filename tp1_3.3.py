@@ -13,7 +13,18 @@ cursor = conn.cursor()
 #Todas as consultas requeridas estão listadas a baixo
 
 #a)consuta a listar os 5 comentários mais úteis e com maior avaliação e os 5 comentários mais úteis e com menor avaliação
-cursor.execute("""  
+cursor.execute("""
+SELECT titulo, rating, nohelpful
+FROM produtos, review
+WHERE produtos.asin=review.asin
+ORDER BY nohelpful DESC, rating DESC
+LIMIT 5 
+UNION
+SELECT titulo, rating, nohelpful
+FROM produtos, review
+WHERE produtos.asin=review.asin
+ORDER BY nohelpful DESC, rating ASC
+LIMIT 5;
 """)
 
 #b)Dado um produto, listar os produtos similares com maiores vendas do que ele
