@@ -73,6 +73,12 @@ WHERE
 
 #e)Listar os 10 produtos com a maior média de avaliações úteis positivas por produto
 cursor.execute("""
+SELECT p.titulo, AVG(r.nohelpful) AS media
+FROM Produtos p, Review r
+WHERE p.asin=r.asin
+GROUP BY p.titulo
+ORDER BY media DESC
+LIMIT 10;
 """)
 
 #f)Listar a 5 categorias de produto com a maior média de avaliações úteis positivas por produto
