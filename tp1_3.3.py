@@ -45,6 +45,7 @@ WHERE p.asin=s.asin AND p.salesrank < (
 cursor.execute("""
 SELECT data, AVG(rating)
 FROM Review
+WHERE asin='0486220125'
 GROUP BY data
 ORDER BY data;
 """)
