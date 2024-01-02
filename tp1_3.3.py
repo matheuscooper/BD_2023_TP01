@@ -84,10 +84,21 @@ LIMIT 10;
 
 #f)Listar a 5 categorias de produto com a maior média de avaliações úteis positivas por produto
 cursor.execute("""
+SELECT c.categoria, AVG(r.nohelpful) as media
+FROM Review r, Categorias c
+WHERE r.asin=c.asin
+GROUP BY c.categoria
+ORDER BY media DESC
+LIMIT 5;
 """)
 
 #g)Listar os 10 clientes que mais fizeram comentários por grupo de produto
 cursor.execute("""
+SELECT p.grupo, r.customer, COUNT(r.customer) AS coment_count
+FROM Produtos p, Review r
+WHERE p.asin=r.asin
+GROUP BY p.grupo, r.customer
+ORDER BY p.grupo, coment_count DESC;
 """)
 
 
