@@ -94,11 +94,15 @@ LIMIT 5;
 
 #g)Listar os 10 clientes que mais fizeram comentários por grupo de produto
 cursor.execute("""
-SELECT p.grupo, r.customer, COUNT(r.customer) AS coment_count
-FROM Produtos p, Review r
-WHERE p.asin=r.asin
-GROUP BY p.grupo, r.customer
-ORDER BY p.grupo, coment_count DESC;
+SELECT grupo, customer, coment_count
+FROM (SELECT p.grupo, r.customer, COUNT(*) AS coment_count, ROW_NUMBER() OVER (PARTITION BY p.grupo ORDER BY COUNT(*) DESC) AS ranking
+    FROM Produtos p, Review r
+    WHERE p.asin = r.asin
+    GROUP BY p.grupo, r.customer) AS comentarios_por_cliente
+WHERE
+    ranking <= 10
+ORDER BY
+    grupo, coment_count DESC;
 """)
 
 
